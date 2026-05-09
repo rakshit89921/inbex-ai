@@ -21,8 +21,9 @@ const SITE_NAME = config.openRouterSiteName;
 //  Core fetch helper
 // ─────────────────────────────────────────────
 async function callOpenRouter(model, messages, options = {}) {
-    if (!OR_KEY) {
-        throw new Error('OPENROUTER_API_KEY is not set. Add it to your .env file.');
+    if (!OR_KEY || OR_KEY.includes('your-key-here')) {
+        console.warn('\n[AI DEV MODE] ⚠️  OPENROUTER_API_KEY not configured. Returning fallback response.');
+        return 'Dev Mode: AI features require an OpenRouter API key in .env';
     }
 
     const body = {
