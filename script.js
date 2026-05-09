@@ -228,7 +228,18 @@ document.getElementById('fp-send-btn').addEventListener('click', async () => {
         showPanel(fpStep2);
         fpStartCountdown(30);
         setTimeout(() => document.getElementById('fp-d1').focus(), 80);
-        showToast('Reset code sent! Check your inbox.', 'success');
+
+        // DEV MODE: auto-fill OTP digits if backend returned the code
+        if (data.devMode && data.devOtp) {
+            showToast('⚠️ DEV MODE: OTP auto-filled from response (Resend not configured).', 'info', 6000);
+            const digits = data.devOtp.split('');
+            fpDigits.forEach((d, i) => {
+                d.value = digits[i] || '';
+                d.classList.toggle('filled', !!digits[i]);
+            });
+        } else {
+            showToast('Reset code sent! Check your inbox.', 'success');
+        }
 
     } catch (err) {
         errEl.textContent = err.message;

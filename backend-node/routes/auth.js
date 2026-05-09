@@ -37,6 +37,14 @@ setInterval(() => {
 const resend = new Resend(config.resendApiKey);
 
 /**
+ * Check whether Resend is properly configured (not a placeholder key).
+ */
+function isResendConfigured() {
+    const key = config.resendApiKey || '';
+    return key.startsWith('re_') && !key.includes('your-resend-api-key');
+}
+
+/**
  * Generate a cryptographically random 6-digit OTP.
  */
 function generateOTP() {
@@ -44,12 +52,21 @@ function generateOTP() {
 }
 
 /**
- * Send the OTP email via Resend.
+ * Send the OTP email via Resend (falls back to console log in dev mode).
+ * Returns the OTP string in dev mode so the caller can include it in the response.
  */
 async function sendOTPEmail(toEmail, name, otp) {
+    if (!isResendConfigured()) {
+        // DEV MODE — log OTP to console and skip email
+        console.warn(`\n[OTP DEV MODE] ⚠️  RESEND_API_KEY not configured.`);
+        console.warn(`[OTP DEV MODE] 📧  To: ${toEmail} | Name: ${name}`);
+        console.warn(`[OTP DEV MODE] 🔑  OTP Code: ${otp}\n`);
+        return { devMode: true };
+    }
+
     const { error } = await resend.emails.send({
         from: config.resendFrom,
-        to: [toEmail],
+        to:   [toEmail],
         subject: 'Your INBEX verification code',
         html: `
 <!DOCTYPE html>
@@ -66,9 +83,7 @@ async function sendOTPEmail(toEmail, name, otp) {
           <!-- Header -->
           <tr>
             <td style="background:linear-gradient(135deg,#6366f1,#a855f7);padding:32px;text-align:center;">
-              <div style="display:inline-flex;align-items:center;gap:10px;">
-                <span style="font-size:28px;font-weight:800;color:white;letter-spacing:-0.5px;">INBEX</span>
-              </div>
+              <span style="font-size:28px;font-weight:800;color:white;letter-spacing:-0.5px;">INBEX</span>
             </td>
           </tr>
           <!-- Body -->
@@ -108,6 +123,60 @@ async function sendOTPEmail(toEmail, name, otp) {
         console.error('[OTP] Resend error:', error);
         throw new Error('Failed to send verification email. Please try again.');
     }
+    return { devMode: false };
+}
+
+/**
+ * Send the password-reset OTP email via Resend (falls back to console log in dev mode).
+ */
+async function sendResetOTPEmail(toEmail, name, otp) {
+    if (!isResendConfigured()) {
+        console.warn(`\n[RESET OTP DEV MODE] ⚠️  RESEND_API_KEY not configured.`);
+        console.warn(`[RESET OTP DEV MODE] 📧  To: ${toEmail} | Name: ${name}`);
+        console.warn(`[RESET OTP DEV MODE] 🔑  Reset OTP Code: ${otp}\n`);
+        return { devMode: true };
+    }
+
+    const { error } = await resend.emails.send({
+        from:    config.resendFrom,
+        to:      [toEmail],
+        subject: 'Reset your INBEX password',
+        html: `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#040714;font-family:Inter,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#040714;padding:40px 0;">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#0d1117,#161b27);border-radius:16px;border:1px solid rgba(99,102,241,0.2);overflow:hidden;">
+        <tr><td style="background:linear-gradient(135deg,#6366f1,#a855f7);padding:32px;text-align:center;">
+          <span style="font-size:28px;font-weight:800;color:white;">INBEX</span>
+        </td></tr>
+        <tr><td style="padding:40px 36px 32px;">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#f1f5f9;">Reset your password</h1>
+          <p style="margin:0 0 28px;font-size:15px;color:#94a3b8;line-height:1.6;">
+            Hi ${name}, use the code below to reset your INBEX password.
+            It expires in <strong style="color:#c4b5fd;">10 minutes</strong>.
+          </p>
+          <div style="background:rgba(99,102,241,0.1);border:2px solid rgba(99,102,241,0.3);border-radius:12px;padding:28px;text-align:center;margin-bottom:28px;">
+            <span style="font-size:42px;font-weight:800;letter-spacing:16px;color:#a78bfa;font-variant-numeric:tabular-nums;">${otp}</span>
+          </div>
+          <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
+            If you didn't request this, you can safely ignore this email.
+          </p>
+        </td></tr>
+        <tr><td style="padding:20px 36px;border-top:1px solid rgba(255,255,255,0.06);">
+          <p style="margin:0;font-size:12px;color:#475569;text-align:center;">© 2026 INBEX Technologies, Inc.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`,
+    });
+
+    if (error) {
+        console.error('[Reset OTP] Resend error:', error);
+        throw new Error('Failed to send reset email.');
+    }
+    return { devMode: false };
 }
 
 // ── POST /auth/send-otp — Step 1 ──
@@ -145,8 +214,15 @@ router.post('/auth/send-otp', async (req, res) => {
     console.log(`[OTP] Generated for ${normalizedEmail}: ${otp}`);
 
     try {
-        await sendOTPEmail(normalizedEmail, name.trim(), otp);
-        return res.json({ message: 'OTP sent. Check your email.' });
+        const result = await sendOTPEmail(normalizedEmail, name.trim(), otp);
+        const response = { message: 'OTP sent. Check your email.' };
+        // In dev mode, include the OTP in the response so you can test without Resend
+        if (result.devMode) {
+            response.devMode  = true;
+            response.devOtp   = otp;
+            response.message  = 'DEV MODE: Resend not configured. OTP is included in this response and logged to server console.';
+        }
+        return res.json(response);
     } catch (err) {
         otpStore.delete(normalizedEmail);
         return res.status(500).json({ detail: err.message });
@@ -390,50 +466,18 @@ router.post('/auth/forgot-password', async (req, res) => {
     console.log(`[Reset] OTP for ${normalizedEmail}: ${otp}`);
 
     try {
-        const { error } = await resend.emails.send({
-            from: config.resendFrom,
-            to: [normalizedEmail],
-            subject: 'Reset your INBEX password',
-            html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#040714;font-family:Inter,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#040714;padding:40px 0;">
-    <tr><td align="center">
-      <table width="480" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#0d1117,#161b27);border-radius:16px;border:1px solid rgba(99,102,241,0.2);overflow:hidden;">
-        <tr><td style="background:linear-gradient(135deg,#6366f1,#a855f7);padding:32px;text-align:center;">
-          <span style="font-size:28px;font-weight:800;color:white;">INBEX</span>
-        </td></tr>
-        <tr><td style="padding:40px 36px 32px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#f1f5f9;">Reset your password</h1>
-          <p style="margin:0 0 28px;font-size:15px;color:#94a3b8;line-height:1.6;">
-            Hi ${user.name}, use the code below to reset your INBEX password.
-            It expires in <strong style="color:#c4b5fd;">10 minutes</strong>.
-          </p>
-          <div style="background:rgba(99,102,241,0.1);border:2px solid rgba(99,102,241,0.3);border-radius:12px;padding:28px;text-align:center;margin-bottom:28px;">
-            <span style="font-size:42px;font-weight:800;letter-spacing:16px;color:#a78bfa;">${otp}</span>
-          </div>
-          <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
-            If you didn't request this, you can safely ignore this email.
-          </p>
-        </td></tr>
-        <tr><td style="padding:20px 36px;border-top:1px solid rgba(255,255,255,0.06);">
-          <p style="margin:0;font-size:12px;color:#475569;text-align:center;">© 2026 INBEX Technologies, Inc.</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
-        });
-        if (error) throw new Error(error.message);
+        const result = await sendResetOTPEmail(normalizedEmail, user.name, otp);
+        const response = { message: 'If this email exists, a reset code has been sent.' };
+        if (result.devMode) {
+            response.devMode = true;
+            response.devOtp  = otp;
+            response.message = 'DEV MODE: Resend not configured. OTP is included in this response and logged to server console.';
+        }
+        return res.json(response);
     } catch (err) {
         resetOtpStore.delete(normalizedEmail);
         return res.status(500).json({ detail: 'Failed to send reset email. Please try again.' });
     }
-
-    return res.json({ message: 'If this email exists, a reset code has been sent.' });
 });
 
 // ── POST /auth/verify-reset-otp ──

@@ -1,12 +1,46 @@
+# ─── Node / JS ───────────────────────────────────────
 node_modules/
+npm-debug.log*
+yarn-error.log
+
+# ─── Environment & Secrets ───────────────────────────
 .env
-database.sqlite
+backend-node/.env
+*.env.local
+*.env.production
+
+# ─── Databases ───────────────────────────────────────
 *.db
+*.sqlite
+*.sqlite3
+database.sqlite
+
+# ─── Python ML artefacts ─────────────────────────────
 *.pkl
+*.joblib
+**/*.pkl
 app/venv/
-.DS_Store
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# ─── Logs ────────────────────────────────────────────
 *.log
 server.err.log
 server.out.log
+logs/
+
+# ─── OS artefacts ────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Editor / IDE ────────────────────────────────────
+.vscode/settings.json
+.idea/
+
+# ─── Build / dist ────────────────────────────────────
+dist/
+build/
+.next/
