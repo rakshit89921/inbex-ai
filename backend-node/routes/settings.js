@@ -1,17 +1,31 @@
 /**
  * INBEX — Settings Router
- * PUT    /settings/profile  — Update user profile
- * PUT    /settings/password — Change password
- * DELETE /settings/account  — Permanently delete account
+ * PUT    /settings/profile       — Update user profile
+ * PUT    /settings/password      — Change password
+ * DELETE /settings/account       — Permanently delete account
+ * PUT    /settings/preference    — Upsert a user preference (theme, ai_tone, etc.)
+ * GET    /settings/preferences   — Get all user preferences as key→value map
+ * GET    /settings/preference/:key — Get a single preference value
  */
 'use strict';
 
 const { Router } = require('express');
 const bcrypt = require('bcryptjs');
-const { run, get } = require('../database');
+const { v4: uuidv4 } = require('uuid');
+const { run, get, all } = require('../database');
 const requireAuth = require('../middleware/auth');
 
 const router = Router();
+
+// Allowed preference keys (whitelist to prevent abuse)
+const ALLOWED_PREFS = new Set([
+    'theme',           // 'dark' | 'light'
+    'ai_tone',         // 'formal' | 'friendly' | 'brief'
+    'notifications',   // 'true' | 'false'
+    'compact_view',    // 'true' | 'false'
+    'language',        // 'en' | etc.
+    'dashboard_layout',// 'default' | 'compact'
+]);
 
 router.put('/settings/profile', requireAuth, (req, res) => {
     const { name } = req.body;
@@ -43,12 +57,85 @@ router.delete('/settings/account', requireAuth, (req, res) => {
         return res.status(401).json({ detail: 'Incorrect password. Account not deleted.' });
     }
 
-    // Delete user — cascades to all related data (email_logs, workflows, gmail_tokens, email_automations)
+    // Delete user — cascades to all related data
     run('DELETE FROM users WHERE id = ?', [req.user.id]);
 
     console.log(`[Settings] 🗑️  Account permanently deleted: ${req.user.email}`);
     return res.status(200).json({ message: 'Account permanently deleted.' });
 });
 
-module.exports = router;
+// ── PUT /settings/preference — upsert a single key-value preference ──
+router.put('/settings/preference', requireAuth, (req, res) => {
+    const { key, value } = req.body;
 
+    if (!key || typeof key !== 'string') {
+        return res.status(422).json({ detail: 'Preference key is required.' });
+    }
+    if (value === undefined || value === null) {
+        return res.status(422).json({ detail: 'Preference value is required.' });
+    }
+    if (!ALLOWED_PREFS.has(key)) {
+        return res.status(422).json({ detail: `Unknown preference key: "${key}". Allowed: ${[...ALLOWED_PREFS].join(', ')}.` });
+    }
+
+    const strValue = String(value);
+
+    // Upsert: update if exists, insert if new
+    const existing = get(
+        'SELECT id FROM user_preferences WHERE user_id = ? AND pref_key = ?',
+        [req.user.id, key]
+    );
+
+    if (existing) {
+        run(
+            'UPDATE user_preferences SET pref_value = ?, updated_at = datetime(\'now\') WHERE user_id = ? AND pref_key = ?',
+            [strValue, req.user.id, key]
+        );
+    } else {
+        run(
+            'INSERT INTO user_preferences (id, user_id, pref_key, pref_value) VALUES (?, ?, ?, ?)',
+            [uuidv4(), req.user.id, key, strValue]
+        );
+    }
+
+    console.log(`[Settings] ✏️  Pref updated: user=${req.user.email} key=${key} value=${strValue}`);
+    return res.json({ key, value: strValue });
+});
+
+// ── GET /settings/preferences — fetch all preferences as { key: value } map ──
+router.get('/settings/preferences', requireAuth, (req, res) => {
+    const rows = all(
+        'SELECT pref_key, pref_value FROM user_preferences WHERE user_id = ?',
+        [req.user.id]
+    );
+
+    // Convert row array to flat object: { theme: 'dark', ai_tone: 'formal', ... }
+    const prefs = {};
+    for (const row of rows) {
+        prefs[row.pref_key] = row.pref_value;
+    }
+
+    return res.json(prefs);
+});
+
+// ── GET /settings/preference/:key — fetch a single preference value ──
+router.get('/settings/preference/:key', requireAuth, (req, res) => {
+    const { key } = req.params;
+
+    if (!ALLOWED_PREFS.has(key)) {
+        return res.status(422).json({ detail: `Unknown preference key: "${key}".` });
+    }
+
+    const row = get(
+        'SELECT pref_value FROM user_preferences WHERE user_id = ? AND pref_key = ?',
+        [req.user.id, key]
+    );
+
+    if (!row) {
+        return res.status(404).json({ detail: `Preference "${key}" not set.` });
+    }
+
+    return res.json({ key, value: row.pref_value });
+});
+
+module.exports = router;

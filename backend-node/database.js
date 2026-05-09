@@ -134,6 +134,46 @@ function createAllTables() {
     db.run(`CREATE INDEX IF NOT EXISTS idx_email_automations_user_id ON email_automations(user_id)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_email_automations_active ON email_automations(is_active)`);
 
+    // ── Snoozed Emails ─────────────────────────────────────────────────────
+    // Tracks emails the user has snoozed for a later reminder.
+    // snooze_until is ISO8601 datetime; status: 'snoozed' | 'reminded' | 'dismissed'
+    db.run(`
+        CREATE TABLE IF NOT EXISTS snoozed_emails (
+            id              TEXT PRIMARY KEY,
+            user_id         TEXT NOT NULL,
+            email_id        TEXT NOT NULL,
+            email_subject   TEXT,
+            email_from      TEXT,
+            snooze_until    TEXT NOT NULL,
+            note            TEXT,
+            status          TEXT DEFAULT 'snoozed',
+            created_at      TEXT DEFAULT (datetime('now')),
+            updated_at      TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    `);
+
+    db.run(`CREATE INDEX IF NOT EXISTS idx_snoozed_emails_user_id  ON snoozed_emails(user_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_snoozed_emails_until    ON snoozed_emails(snooze_until)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_snoozed_emails_status   ON snoozed_emails(status)`);
+
+    // ── User Preferences ───────────────────────────────────────────────────
+    // Generic key-value store per user for UI and AI preferences.
+    // Examples: theme='dark', ai_tone='formal', notifications='true'
+    db.run(`
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            id          TEXT PRIMARY KEY,
+            user_id     TEXT NOT NULL,
+            pref_key    TEXT NOT NULL,
+            pref_value  TEXT NOT NULL,
+            updated_at  TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(user_id, pref_key)
+        )
+    `);
+
+    db.run(`CREATE INDEX IF NOT EXISTS idx_user_prefs_user_id ON user_preferences(user_id)`);
+
     saveDatabase();
 }
 
