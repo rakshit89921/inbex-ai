@@ -419,6 +419,11 @@ button {
     gap: var(--sp-6);
 }
 
+.login-form[hidden],
+.signup-form[hidden] {
+    display: none !important;
+}
+
 /* ── Two-column name row ── */
 .field-row {
     display: grid;
