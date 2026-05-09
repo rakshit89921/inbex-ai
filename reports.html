@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="dashboard.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script src="auth.js"></script>
+    <script src="reports.js"></script>
 </head>
 
 <body>
@@ -238,8 +239,27 @@
             </section>
 
         </div>
+        <!-- AI Insights Section -->
+        <section class="panel" style="margin-top:0;">
+            <header class="panel-header">
+                <h2 class="panel-title">✨ AI-Generated Insights</h2>
+                <button class="btn btn-primary small" id="refresh-insights-btn" onclick="loadAiInsights()" style="font-size:0.78rem;padding:6px 14px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                    Generate Insights
+                </button>
+            </header>
+            <div id="ai-insights-list" style="padding:var(--sp-4) var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-3);">
+                <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.88rem;">
+                    <span style="font-size:28px;display:block;margin-bottom:8px;">🔍</span>
+                    Click <strong>Generate Insights</strong> to get AI-powered analysis of your email patterns.
+                    <br/><span style="font-size:0.75rem;opacity:0.7;margin-top:4px;display:block;">Powered by Google Gemma 3 27B via OpenRouter</span>
+                </div>
+            </div>
+        </section>
+
     </main>
 
+    <script src="reports.js"></script>
     <script src="dashboard.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {

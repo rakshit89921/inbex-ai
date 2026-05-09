@@ -1016,3 +1016,148 @@ button {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* =====================================================
+   PREMIUM ADDITIONS — Animated border card + AI badge
+===================================================== */
+
+/* Rotating gradient ring around the card */
+.card-glow-ring {
+    position: absolute;
+    inset: -2px;
+    border-radius: 34px;
+    background: conic-gradient(
+        from var(--angle, 0deg),
+        #6366f1,
+        #a855f7,
+        #06b6d4,
+        #6366f1
+    );
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    animation: rotateBorder 6s linear infinite;
+    filter: blur(1px);
+}
+
+.card:hover .card-glow-ring,
+.card:focus-within .card-glow-ring {
+    opacity: 0.6;
+}
+
+@property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+@keyframes rotateBorder {
+    to { --angle: 360deg; }
+}
+
+/* AI Status Badge (top of card) */
+.ai-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(99,102,241,0.3);
+    background: rgba(99,102,241,0.08);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #a5b4fc;
+    margin-bottom: 20px;
+}
+
+.ai-status-pulse {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: pulseGreen 2s infinite;
+    box-shadow: 0 0 6px #10b981;
+}
+
+@keyframes pulseGreen {
+    0%, 100% { opacity: 1; box-shadow: 0 0 4px #10b981; }
+    50%       { opacity: 0.5; box-shadow: 0 0 12px #10b981; }
+}
+
+/* Hero gradient title */
+.hero-gradient-text {
+    background: linear-gradient(135deg, #c7d2fe 0%, #a5b4fc 40%, #e879f9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 8px;
+}
+
+/* Floating star particles */
+.star-field {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.star {
+    position: absolute;
+    border-radius: 50%;
+    background: white;
+    animation: twinkle var(--dur, 3s) var(--delay, 0s) ease-in-out infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0; transform: scale(0.6); }
+    50%       { opacity: var(--max-opacity, 0.6); transform: scale(1); }
+}
+
+/* Animated orb behind card */
+.login-orb {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: orbPulse 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes orbPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+    50%       { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+}
+
+/* Feature pills below login card */
+.feature-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+    animation: fadeUp 0.6s ease 0.5s both;
+}
+
+.feature-pill {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    backdrop-filter: blur(8px);
+}

@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="dashboard.css" />
     <link rel="stylesheet" href="classify.css" />
     <script src="auth.js"></script>
+    <script src="toast.js"></script>
 </head>
 
 <body>
@@ -163,7 +164,7 @@ Please find attached your revised salary structure..."
                                 <span id="classify-btn-text">Classify Email</span>
                                 <span class="clf-spinner" id="clf-spinner" aria-hidden="true"></span>
                             </button>
-                            <span class="clf-hint">Powered by your FastAPI backend at <code>/predict</code></span>
+                            <span class="clf-hint">Keyword model + <strong>Qwen3 480B</strong> AI fallback via OpenRouter</span>
                         </div>
                     </div>
                 </section>
@@ -329,9 +330,6 @@ Please find attached your revised salary structure..."
             </div>
         </div>
     </main>
-
-    <!-- Toast Notification -->
-    <div class="clf-toast" id="toast" role="alert" aria-live="polite"></div>
 
     <script src="dashboard.js"></script>
     <script src="classify.js"></script>
