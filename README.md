@@ -1,8 +1,8 @@
-# INBEX AI Platform 📬🤖
+# INBEX AI Platform 
 
 INBEX is a next-generation, AI-powered email automation and inbox management platform. It integrates directly with Gmail to fetch your emails, automatically classifies them, generates smart AI replies, and provides deep insights into your inbox patterns—all wrapped in a beautiful, responsive, glassmorphism UI.
 
-## ✨ Features
+## Features
 
 - **Gmail Integration:** Securely connect via Google OAuth to fetch, read, and manage your live emails.
 - **AI Classification & Prioritization:** Automatically categorizes emails (Work, Finance, Personal, HR, Spam) and assigns an AI-generated priority score (0-100) using **NVIDIA Nemotron 3 Super**.
@@ -11,7 +11,7 @@ INBEX is a next-generation, AI-powered email automation and inbox management pla
 - **Secure Authentication:** JWT-based user accounts with passwordless OTP verification powered by Resend.
 - **Zero-Flash Theme Engine:** Seamless Light/Dark mode that respects OS preferences and syncs to your account.
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 **Frontend:**
 - HTML5, Vanilla JavaScript, CSS3
@@ -25,7 +25,7 @@ INBEX is a next-generation, AI-powered email automation and inbox management pla
 - OpenRouter API for routing to multiple state-of-the-art LLMs (Google Gemma, OpenAI, Qwen, NVIDIA)
 - Google APIs Node.js Client (Gmail OAuth)
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Prerequisites
 - [Node.js](https://nodejs.org/) (v16 or higher)
@@ -64,7 +64,7 @@ node server.js
 
 The server will initialize the SQLite database and start on `http://localhost:3000`. You can now navigate to this URL in your browser!
 
-## 🔐 Authentication & OAuth Setup
+## Authentication & OAuth Setup
 
 To enable "Continue with Google", you must configure your Google Cloud project:
 1. Enable the **Gmail API**.
@@ -73,7 +73,7 @@ To enable "Continue with Google", you must configure your Google Cloud project:
 4. Add `http://localhost:3000` to Authorized JavaScript origins.
 5. Add `http://localhost:3000/auth/google/callback` to Authorized redirect URIs.
 
-## 🧠 AI Model Configuration
+## AI Model Configuration
 
 INBEX uses OpenRouter to multiplex requests to various AI models based on the task. By default, it uses free-tier endpoints. You can change these in your `.env` file:
 ```env
@@ -85,5 +85,5 @@ MODEL_PRIORITY_SCORE=nvidia/nemotron-3-super-120b-a12b:free
 MODEL_INSIGHTS=google/gemma-4-31b-it:free
 ```
 
-## 📄 License
+## License
 This project is for educational and portfolio purposes. Feel free to fork and modify!
